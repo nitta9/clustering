@@ -28,6 +28,14 @@ def generate_logistics_data(n_samples=200, n_centers=4, random_state=42):
     """
     if True:
         df = pd.read_csv('data.csv')
+        df = df.rename(columns={
+            'Ｍ設': 'id',
+            'X座標': 'lat',
+            'Y座標': 'lon',
+            '標準作業時間': 'work_time',
+            '法定満期日': 'deadline',
+        })
+
         df['work_time'] /= 60
         base_date = pd.to_datetime(str(20251201), format="%Y%m%d")
         df["deadline"] = (
@@ -35,7 +43,8 @@ def generate_logistics_data(n_samples=200, n_centers=4, random_state=42):
             .sub(base_date)
             .dt.days
         )
-
+        if n_samples is None:
+            return df
         return df.sample(n=n_samples, random_state=random_state)
     rng = np.random.RandomState(random_state)
     
@@ -330,10 +339,11 @@ def analyze_results(df, max_cap):
     print(stats.to_markdown()) # pandas to_markdown() requires tabulate
 
 
-n_vehicles = 20
+n_vehicles = 11
+n_samples = None
 
 # データ生成の実行
-df_vrp = generate_logistics_data(n_samples=11000, n_centers=n_vehicles, random_state=1)
+df_vrp = generate_logistics_data(n_samples=n_samples, n_centers=n_vehicles, random_state=1)
 print("生成データサンプル:")
 print(df_vrp.head())
 
@@ -359,7 +369,7 @@ vrp_kmeans = WeightedConstrainedKMeans(
     max_capacity=max_cap,
     weight_col='work_time',
     deadline_col='deadline',
-    time_weight_factor=10,  # 納期をある程度重視
+    time_weight_factor=0.1,  # 納期をある程度重視
     max_iter=20,
     random_state=42
 )
